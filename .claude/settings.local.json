@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(railway --version)",
+      "Bash(npm approve-scripts *)",
+      "Bash(npx @railway/cli login --browserless)",
+      "Bash(npx @railway/cli link)",
+      "Bash(npx @railway/cli link --project awake-laughter)",
+      "Bash(npx @railway/cli up)",
+      "Bash(npx @railway/cli status)",
+      "Bash(npx @railway/cli domain)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "WebFetch(domain:www.citplatform.com)",
+      "Bash(mkdir -p public)",
+      "Bash(mv index.html styles.css app.js public/)",
+      "Bash(npx @railway/cli variables set SITE_USER=admin SITE_PASS=extreme2026)"
+    ]
+  }
+}
