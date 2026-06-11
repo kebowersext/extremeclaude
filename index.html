@@ -3,87 +3,363 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extreme Dashboard</title>
-
-  <!-- AG-Grid Community CSS -->
+  <title>Training Dashboard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css" />
-
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      background: #16213e;
-      padding: 16px 24px;
-      border-bottom: 1px solid #0f3460;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    header h1 {
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: #e94560;
-    }
-
-    main {
-      flex: 1;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .toolbar input {
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: 1px solid #0f3460;
-      background: #16213e;
-      color: #e0e0e0;
-      font-size: 0.9rem;
-      width: 260px;
-    }
-
-    .toolbar input::placeholder { color: #666; }
-
-    #grid-container {
-      flex: 1;
-      min-height: 500px;
-    }
-  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<header>
-  <h1>Extreme Dashboard</h1>
-</header>
+<!-- ── TOP NAV ─────────────────────────────────────────────────────────── -->
+<nav class="top-nav">
+  <button class="nav-btn active">User</button>
+  <button class="nav-btn">View</button>
+  <button class="nav-btn">Manage</button>
+  <button class="nav-btn">Modules</button>
+</nav>
 
-<main>
-  <div class="toolbar">
-    <input type="text" id="search" placeholder="Search..." />
+<!-- ── HEADER ──────────────────────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="header-title">
+    <div class="title-main">Training Dashboard – Step CG</div>
+    <div class="title-sub">Partner Level: <strong>Diamond Elite</strong></div>
   </div>
-  <div id="grid-container" class="ag-theme-alpine-dark"></div>
-</main>
+  <div class="header-controls">
+    <div class="control-group">
+      <label>Reseller</label>
+      <select><option>Step CG</option></select>
+    </div>
+    <div class="control-group">
+      <label>Periods</label>
+      <select>
+        <option>Q4 - 2026</option>
+        <option>Q3 - 2026</option>
+        <option>Q2 - 2026</option>
+        <option>Q1 - 2026</option>
+      </select>
+    </div>
+  </div>
+</div>
 
-<!-- AG-Grid Community UMD bundle -->
+<div class="page-body">
+
+  <!-- ── ACTIONS ───────────────────────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Actions</h2>
+    <div class="actions-grid">
+
+      <div class="action-card" onclick="toggleAction(this)">
+        <div class="action-icon red"><i class="fa-solid fa-lightbulb"></i></div>
+        <div class="action-label">Expiring Q4 FY2026 (30 Jun 2026)</div>
+        <div class="action-badge red">0</div>
+        <i class="fa-solid fa-chevron-down action-chevron"></i>
+        <div class="action-detail">No certifications expiring this quarter.</div>
+      </div>
+
+      <div class="action-card" onclick="toggleAction(this)">
+        <div class="action-icon yellow"><i class="fa-solid fa-lightbulb"></i></div>
+        <div class="action-label">Expiring Q1 FY2027 (30 Sep 2026)</div>
+        <div class="action-badge yellow">1</div>
+        <i class="fa-solid fa-chevron-down action-chevron"></i>
+        <div class="action-detail">1 certification expiring — Extreme Certified Professional in Extreme Switching (Devin Regan, expires 04 Aug 2026).</div>
+      </div>
+
+      <div class="action-card" onclick="toggleAction(this)">
+        <div class="action-icon teal"><i class="fa-solid fa-lightbulb"></i></div>
+        <div class="action-label">Expiring Q2 FY2027 (31 Dec 2026)</div>
+        <div class="action-badge teal">18</div>
+        <i class="fa-solid fa-chevron-down action-chevron"></i>
+        <div class="action-detail">18 certifications expiring next quarter. Review the Certifications table below and plan renewals.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── PARTNER PROGRAM REQUIREMENTS ──────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Partner Program Requirements</h2>
+    <div class="table-wrap">
+      <table class="req-table">
+        <thead>
+          <tr>
+            <th>Program Level</th>
+            <th>Revenue Achieved</th>
+            <th>Training Requirement</th>
+            <th>Training Achieved</th>
+            <th>Current Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Diamond Elite -->
+          <tr>
+            <td rowspan="4" class="level-cell">Diamond Elite</td>
+            <td rowspan="4" class="center"><span class="check">✔</span></td>
+            <td>3 x Extreme Certified Professional in Solutions Selling 2026</td>
+            <td class="center"><span class="check">✔</span></td>
+            <td rowspan="4">Diamond Elite</td>
+          </tr>
+          <tr>
+            <td>3 x Extreme Certified Professional in Solutions Design 2026</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <tr>
+            <td>1 x Extreme Certified Professional in Extreme Fabric</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <tr>
+            <td>2 x Extreme Certified Professional (any Technical Track)</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <!-- Diamond -->
+          <tr>
+            <td rowspan="4" class="level-cell">Diamond</td>
+            <td rowspan="4" class="center"><span class="check">✔</span></td>
+            <td>2 x Extreme Certified Professional in Solutions Selling 2026</td>
+            <td class="center"><span class="check">✔</span></td>
+            <td rowspan="4"></td>
+          </tr>
+          <tr>
+            <td>2 x Extreme Certified Professional in Solutions Design 2026</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <tr>
+            <td>1 x Extreme Networks Certified Administrator in Extreme Fabric</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <tr>
+            <td>1 x Extreme Networks Certified Administrator (any Technical Track)</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <!-- Gold -->
+          <tr>
+            <td rowspan="3" class="level-cell">Gold</td>
+            <td rowspan="3" class="center"><span class="check">✔</span></td>
+            <td>1 x Extreme Certified Professional in Solutions Selling 2026</td>
+            <td class="center"><span class="check">✔</span></td>
+            <td rowspan="3"></td>
+          </tr>
+          <tr>
+            <td>1 x Extreme Certified Professional in Solutions Design 2026</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <tr>
+            <td>1 x Extreme Networks Certified Administrator in Extreme Fabric</td>
+            <td class="center"><span class="check">✔</span></td>
+          </tr>
+          <!-- Authorized -->
+          <tr>
+            <td class="level-cell">Authorized</td>
+            <td class="center">—</td>
+            <td>2 x Extreme Certified Associate in Solutions Selling 2026</td>
+            <td class="center"><span class="check">✔</span></td>
+            <td></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="5" class="footnote">Training Exception Granted.<span class="footnote-star">★</span></td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── IMPORTANT TRAINING UPDATES ────────────────────────────────────── -->
+  <section class="section updates-section">
+    <div class="updates-header">
+      Important Training Updates <i class="fa-solid fa-circle-info"></i>
+    </div>
+    <div class="updates-body">
+      <p><strong>Partner Program Requirements Update – Revenue &amp; Training</strong></p>
+      <p><strong>Revenue Threshold Change</strong><br>
+      The annual revenue threshold for Gold level (Tier A) increases from <strong>$250K to $500K</strong>. This change will be visible in the partner dashboard starting <strong>Apr 1 (FY26 Q4)</strong>.<br>
+      Partners can still be promoted to Gold from Q3 to Q4 under the current $250k threshold. The new requirement applies to: <strong>Q4 Rebate eligibility</strong>, and <strong>Program Levelling for FY27</strong>.</p>
+
+      <p><strong>Technical Certification Requirement (ENCA / ECP)</strong><br>
+      Technical certifications are required by Jun 30 (end of FY26). Technical Training Requirements for Gold, Diamond, and Diamond Elite – <strong>Fabric Track Mandatory</strong>.<br>
+      Compliance is required for: <strong>Q4 Rebate payouts</strong>, and <strong>Program Levelling for FY27</strong>.</p>
+
+      <p><strong>Sales and Sales Engineering</strong><br>
+      The Solutions Selling and Solutions Design tracks are specifically for partners focusing on the sales process, from initial discussions to a solution design to meet a customer's needs. Both tracks are free and available as Video on Demand for easy access and consumption.<br>
+      The first step is an introductory Solutions Selling Associate level course which is the recommended starting point for both tracks. A final exam must be successfully completed at the conclusion of each course in order to achieve the certification.</p>
+
+      <p><strong>Technical Training</strong><br>
+      Extreme Networks Technical Training (<strong>Extreme Networks Certified Administrator / Extreme Certified Professional</strong>) empowers our partners to build technical expertise, accelerate deployments, and deliver exceptional outcomes.<br>
+      Each technical track includes 2–4 Knowledge Credential courses and hands-on workshops.<br>
+      For partner program resources, certification requirements, and the latest updates, visit <a href="#" class="ext-link">PartnerEngage</a>. For training and enrolment support, contact <a href="mailto:extremeacademy@extremenetworks.com" class="ext-link">extremeacademy@extremenetworks.com</a>.</p>
+    </div>
+  </section>
+
+  <!-- ── TRAINING MATRIX ───────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="matrix-wrap">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th colspan="2" class="matrix-header-cat">Sales &amp; Sales Engineering</th>
+            <th class="matrix-header-level">ASSOCIATE</th>
+            <th class="matrix-header-level">PROFESSIONAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Sales rows -->
+          <tr class="matrix-row-sales">
+            <td class="matrix-cat" rowspan="2">SALES</td>
+            <td class="matrix-track">Solutions Selling <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Associate in<br><em>Solutions Selling 2026</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 11</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>Solutions Selling 2026</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 8</div>
+            </td>
+          </tr>
+          <tr class="matrix-row-sales">
+            <td class="matrix-track">Solutions Design <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Associate in<br><em>Solutions Selling 2026</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 11</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>Solutions Design 2026</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 4</div>
+            </td>
+          </tr>
+
+          <!-- Technical header row -->
+          <tr>
+            <th colspan="2" class="matrix-header-cat">Technical Training</th>
+            <th class="matrix-header-level">ADMINISTRATOR</th>
+            <th class="matrix-header-level">PROFESSIONAL</th>
+          </tr>
+
+          <!-- WIRED rows -->
+          <tr class="matrix-row-wired">
+            <td class="matrix-cat" rowspan="2">WIRED</td>
+            <td class="matrix-track">Extreme Switching <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Networks Certified Administrator in<br><em>Extreme Switching</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 4</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>Extreme Switching</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 3</div>
+            </td>
+          </tr>
+          <tr class="matrix-row-wired">
+            <td class="matrix-track">Extreme Fabric <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Networks Certified Administrator in<br><em>Extreme Fabric</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 3</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>Extreme Fabric</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 3</div>
+            </td>
+          </tr>
+
+          <!-- WIRELESS rows -->
+          <tr class="matrix-row-wireless">
+            <td class="matrix-cat" rowspan="2">WIRELESS</td>
+            <td class="matrix-track">Extreme Wireless Cloud <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Networks Certified Administrator in<br><em>ExtremeWireless Cloud</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 5</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>ExtremeWireless Cloud</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 5</div>
+            </td>
+          </tr>
+          <tr class="matrix-row-wireless">
+            <td class="matrix-track">ExtremeCloud™ IQ Controller <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Networks Certified Administrator in<br><em>ExtremeCloud IQ - Controller</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 1</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>ExtremeCloud IQ - Controller</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 1</div>
+            </td>
+          </tr>
+
+          <!-- APPLICATIONS rows -->
+          <tr class="matrix-row-apps">
+            <td class="matrix-cat" rowspan="3">APPLICATIONS</td>
+            <td class="matrix-track">ExtremeCloud SD-WAN <span class="rocket-gray">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Networks Certified Administrator in<br><em>ExtremeCloud SD-WAN</em></div>
+              <div class="cert-count zero"><i class="fa-solid fa-user"></i> 0</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>ExtremeCloud SD-WAN</em></div>
+              <div class="cert-count zero"><i class="fa-solid fa-user"></i> 0</div>
+            </td>
+          </tr>
+          <tr class="matrix-row-apps">
+            <td class="matrix-track">ExtremeCloud IQ – Site Engine <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Networks Certified Administrator in<br><em>ExtremeCloud IQ - Site Engine</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 1</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>ExtremeCloud IQ - Site Engine</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 1</div>
+            </td>
+          </tr>
+          <tr class="matrix-row-apps">
+            <td class="matrix-track">Extreme Control <span class="rocket">🚀</span></td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Networks Certified Administrator in<br><em>ExtremeControl</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 3</div>
+            </td>
+            <td class="matrix-cert">
+              <div class="cert-cell">Extreme Certified Professional in<br><em>ExtremeControl</em></div>
+              <div class="cert-count"><i class="fa-solid fa-user"></i> 3</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="matrix-legend">
+        <span><i class="fa-solid fa-user legend-icon achieved"></i> Certificate Achieved</span>
+        <span><i class="fa-solid fa-user legend-icon none"></i> No Certifications</span>
+        <span><i class="fa-solid fa-star legend-icon exception"></i> Manual Exception Granted</span>
+        <span><i class="fa-solid fa-circle-dot legend-icon on-track"></i> On Track</span>
+        <span><i class="fa-regular fa-circle legend-icon not-started"></i> Not Started</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CERTIFICATIONS (AG-GRID) ───────────────────────────────────────── -->
+  <section class="section">
+    <h2 class="section-title">Certifications</h2>
+    <div class="cert-filters">
+      <div class="filter-group">
+        <label>Period (Validity)</label>
+        <select id="f-period"><option>Show All</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Track</label>
+        <select id="f-track"><option>Show All</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Achievement Type</label>
+        <select id="f-achievement"><option>Show All</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Competency Level</label>
+        <select id="f-competency"><option>Show All</option></select>
+      </div>
+      <button class="btn-apply" onclick="applyFilters()">Apply Filter</button>
+      <button class="btn-export" onclick="exportGrid()"><i class="fa-solid fa-file-excel"></i> Export</button>
+      <button class="btn-export" onclick="exportAll()"><i class="fa-solid fa-file-excel"></i> Export All Resellers Certs</button>
+    </div>
+    <div id="cert-grid" class="ag-theme-alpine" style="width:100%; height:420px;"></div>
+  </section>
+
+</div><!-- /.page-body -->
+
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>
