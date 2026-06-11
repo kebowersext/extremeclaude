@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cisco → EXOS Config Converter</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --purple: #6b21a8;
+      --purple-light: #9333ea;
+      --bg: #0f0f1a;
+      --panel: #1a1a2e;
+      --border: #2d2d4e;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    .top-nav {
+      background: #111128;
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 44px;
+    }
+    .top-nav a { color: var(--text-muted); text-decoration: none; font-size: 13px; padding: 6px 12px; border-radius: 4px; }
+    .top-nav a:hover { color: var(--text); background: var(--border); }
+    .top-nav .brand { color: var(--purple-light); font-weight: 700; margin-right: 12px; font-size: 14px; }
+
+    .page-header {
+      background: linear-gradient(135deg, #1a0a2e 0%, #0f172a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .page-header i { font-size: 28px; color: var(--purple-light); }
+    .page-header h1 { font-size: 20px; font-weight: 700; }
+    .page-header p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .main { display: grid; grid-template-columns: 1fr 1fr; gap: 0; height: calc(100vh - 130px); }
+
+    .pane {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+    .pane:last-child { border-right: none; }
+
+    .pane-header {
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .pane-header .label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pane-header .label i { color: var(--purple-light); }
+
+    .btn {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: var(--border); }
+    .btn.primary { background: var(--purple); border-color: var(--purple-light); }
+    .btn.primary:hover { background: var(--purple-light); }
+    .btn-group { display: flex; gap: 6px; }
+
+    textarea {
+      flex: 1;
+      background: #0a0a16;
+      color: #c9d1d9;
+      border: none;
+      padding: 14px 16px;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+    }
+    textarea::placeholder { color: #3d4a5c; }
+
+    #output-area {
+      flex: 1;
+      overflow-y: auto;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 14px 16px;
+      background: #0a0a16;
+      white-space: pre;
+    }
+    .out-comment  { color: #6a737d; }
+    .out-section  { color: var(--purple-light); font-weight: bold; }
+    .out-cmd      { color: #c9d1d9; }
+    .out-warn     { color: var(--yellow); }
+    .out-error    { color: var(--red); }
+
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 16px;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .stat { display: flex; align-items: center; gap: 5px; }
+    .stat .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: var(--green); }
+    .dot-yellow { background: var(--yellow); }
+    .dot-red { background: var(--red); }
+
+    .convert-bar {
+      padding: 10px 16px;
+      background: #13132a;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .option-label { font-size: 12px; color: var(--text-muted); }
+    select {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    .port-mapping-note { font-size: 11px; color: var(--text-muted); flex: 1; text-align: right; }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <span class="brand"><i class="fa fa-network-wired"></i> Extreme Dashboard</span>
+  <a href="/"><i class="fa fa-chart-bar"></i> Dashboard</a>
+  <a href="/log-analyzer.html"><i class="fa fa-magnifying-glass"></i> Log Analyzer</a>
+  <a href="/config-converter.html" style="color:var(--text);background:var(--border)"><i class="fa fa-exchange-alt"></i> Config Converter</a>
+</nav>
+
+<div class="page-header">
+  <i class="fa fa-exchange-alt"></i>
+  <div>
+    <h1>Cisco IOS/IOS-XE → ExtremeXOS (EXOS) Config Converter</h1>
+    <p>Paste a Cisco switch/router config on the left — translated EXOS commands appear on the right</p>
+  </div>
+</div>
+
+<div class="convert-bar">
+  <span class="option-label">Port numbering:</span>
+  <select id="portStyle">
+    <option value="slot">Slot:Port (1:1, 1:2 …)</option>
+    <option value="flat">Flat (1, 2, 3 …)</option>
+  </select>
+  <span class="option-label">Slot:</span>
+  <select id="slotNum">
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+  </select>
+  <button class="btn primary" onclick="doConvert()"><i class="fa fa-play"></i> Convert</button>
+  <span class="port-mapping-note"><i class="fa fa-circle-info"></i> Port index derived from last digit(s) of interface number (e.g. Gi1/0/5 → 5)</span>
+</div>
+
+<div class="main">
+  <!-- LEFT: Cisco input -->
+  <div class="pane">
+    <div class="pane-header">
+      <span class="label"><i class="fa fa-file-code"></i> Cisco IOS / IOS-XE Configuration</span>
+      <div class="btn-group">
+        <button class="btn" onclick="loadSample()"><i class="fa fa-flask"></i> Load Sample</button>
+        <button class="btn" onclick="clearInput()"><i class="fa fa-trash"></i> Clear</button>
+      </div>
+    </div>
+    <textarea id="cisco-input" placeholder="Paste Cisco IOS or IOS-XE configuration here…
+
+Example:
+hostname Core-Switch
+vlan 10
+ name Data
+interface GigabitEthernet1/0/1
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast"></textarea>
+    <div class="bottom-bar" id="input-stats">
+      <span class="stat"><i class="fa fa-align-left"></i> 0 lines</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: EXOS output -->
+  <div class="pane">
+    <div class="pane-header">
+      <span class="label"><i class="fa fa-terminal"></i> ExtremeXOS (EXOS) Output</span>
+      <div class="btn-group">
+        <button class="btn" onclick="copyOutput()"><i class="fa fa-copy"></i> Copy</button>
+        <button class="btn" onclick="downloadOutput()"><i class="fa fa-download"></i> Download .xsf</button>
+      </div>
+    </div>
+    <div id="output-area"><span class="out-comment"># Output will appear here after conversion.</span></div>
+    <div class="bottom-bar" id="output-stats">
+      <span class="stat"><span class="dot dot-green"></span> 0 commands</span>
+      <span class="stat"><span class="dot dot-yellow"></span> 0 warnings</span>
+      <span class="stat"><span class="dot dot-red"></span> 0 unsupported</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// PARSER UTILITIES
+// ─────────────────────────────────────────────────────────────────────────────
+
+function maskToPrefix(mask) {
+  return mask.split('.').reduce((acc, oct) => {
+    let n = parseInt(oct);
+    let bits = 0;
+    while (n) { bits += n & 1; n >>= 1; }
+    return acc + bits;
+  }, 0);
+}
+
+function normalizeIfName(name) {
+  // Gi0/0/1 → GigabitEthernet0/0/1 etc (just normalize shorthand)
+  return name
+    .replace(/^Gi(?=\d|\/)/i, 'GigabitEthernet')
+    .replace(/^Fa(?=\d|\/)/i, 'FastEthernet')
+    .replace(/^Te(?=\d|\/)/i, 'TenGigabitEthernet')
+    .replace(/^Hu(?=\d|\/)/i, 'HundredGigabitEthernet')
+    .replace(/^Fo(?=\d|\/)/i, 'FortyGigabitEthernet')
+    .replace(/^Po(?=\d)/i, 'Port-channel')
+    .replace(/^Vl(?=\d)/i, 'Vlan')
+    .replace(/^Lo(?=\d)/i, 'Loopback')
+    .replace(/^Mg(?=\d|\/)/i, 'Management');
+}
+
+function ifToPort(ifName, portStyle, slot) {
+  // Extract the last numeric segment: GigabitEthernet1/0/5 → 5
+  const m = ifName.match(/(\d+)(?:\/(\d+))?(?:\/(\d+))?$/);
+  if (!m) return null;
+  const portNum = m[3] || m[2] || m[1];
+  return portStyle === 'slot' ? `${slot}:${portNum}` : portNum;
+}
+
+function expandVlanRange(str) {
+  // "1,10-12,20" → [1,10,11,12,20]
+  const result = [];
+  str.split(',').forEach(part => {
+    const range = part.trim().split('-');
+    if (range.length === 2) {
+      for (let i = parseInt(range[0]); i <= parseInt(range[1]); i++) result.push(i);
+    } else {
+      result.push(parseInt(range[0]));
+    }
+  });
+  return result.filter(v => !isNaN(v));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN PARSER
+// ─────────────────────────────────────────────────────────────────────────────
+
+function parseCisco(lines) {
+  const ctx = {
+    hostname: null,
+    vlans: {},        // id(num) → { id, name }
+    interfaces: {},   // normalized-name → { ... }
+    routes: [],
+    acls: {},         // name → [ rule strings ]
+    stpMode: null,
+    ntp: [],
+    dns: { servers: [], domain: null },
+    banners: [],
+    mgmt: { ip: null, mask: null, gw: null },
+    unsupported: []
+  };
+
+  let i = 0;
+  const iface = () => ctx.interfaces;
+
+  function getOrCreateIf(name) {
+    if (!iface()[name]) {
+      iface()[name] = {
+        name,
+        description: null,
+        shutdown: false,
+        ip: null, mask: null,
+        accessVlan: null,
+        trunkAllowed: null,  // null means all
+        trunkNative: 1,
+        mode: null,           // 'access' | 'trunk' | 'routed'
+        portfast: false,
+        stpGuard: null,
+        channelGroup: null,
+        channelMode: null,
+        speed: null,
+        duplex: null,
+        lldp: {},
+        voiceVlan: null,
+        isLoopback: false,
+        isManagement: false,
+        isSVI: false,
+      };
+    }
+    return iface()[name];
+  }
+
+  while (i < lines.length) {
+    const raw = lines[i];
+    const line = raw.trim();
+    i++;
+
+    if (!line || line.startsWith('!') || line.startsWith('#')) continue;
+
+    // hostname
+    if (/^hostname\s+(\S+)/.test(line)) {
+      ctx.hostname = line.match(/^hostname\s+(\S+)/)[1];
+      continue;
+    }
+
+    // ip domain name / domain-name
+    if (/^ip domain[-\s]name\s+(\S+)/.test(line)) {
+      ctx.dns.domain = line.match(/^ip domain[-\s]name\s+(\S+)/)[1];
+      continue;
+    }
+
+    // ip name-server
+    if (/^ip name-server\s+(.+)/.test(line)) {
+      ctx.dns.servers.push(...line.match(/^ip name-server\s+(.+)/)[1].split(/\s+/));
+      continue;
+    }
+
+    // ntp server
+    if (/^ntp server\s+(\S+)/.test(line)) {
+      ctx.ntp.push(line.match(/^ntp server\s+(\S+)/)[1]);
+      continue;
+    }
+
+    // spanning-tree mode
+    if (/^spanning-tree mode\s+(\S+)/.test(line)) {
+      ctx.stpMode = line.match(/^spanning-tree mode\s+(\S+)/)[1].toLowerCase();
+      continue;
+    }
+
+    // ip default-gateway
+    if (/^ip default-gateway\s+(\S+)/.test(line)) {
+      ctx.mgmt.gw = line.match(/^ip default-gateway\s+(\S+)/)[1];
+      continue;
+    }
+
+    // ip route
+    if (/^ip route\s+(\S+)\s+(\S+)\s+(\S+)/.test(line)) {
+      const [, net, mask, nh] = line.match(/^ip route\s+(\S+)\s+(\S+)\s+(\S+)/);
+      const dist = line.match(/\s+(\d+)$/);
+      ctx.routes.push({ net, mask, nh, distance: dist ? parseInt(dist[1]) : null });
+      continue;
+    }
+
+    // vlan block
+    if (/^vlan\s+([\d,\-]+)$/.test(line)) {
+      const ids = expandVlanRange(line.match(/^vlan\s+([\d,\-]+)$/)[1]);
+      let vname = null;
+      while (i < lines.length && /^\s+/.test(lines[i])) {
+        const sub = lines[i].trim();
+        i++;
+        if (/^name\s+(\S+)/.test(sub)) vname = sub.match(/^name\s+(\S+)/)[1];
+      }
+      ids.forEach(id => {
+        if (!ctx.vlans[id]) ctx.vlans[id] = { id, name: vname || `VLAN${id}` };
+        else if (vname) ctx.vlans[id].name = vname;
+      });
+      continue;
+    }
+
+    // interface block
+    if (/^interface\s+(.+)/.test(line)) {
+      const rawName = normalizeIfName(line.match(/^interface\s+(.+)/)[1].trim());
+      const ifObj = getOrCreateIf(rawName);
+      ifObj.isLoopback = /^Loopback/i.test(rawName);
+      ifObj.isSVI = /^Vlan\d/i.test(rawName);
+      ifObj.isManagement = /^Management/i.test(rawName);
+
+      while (i < lines.length && /^\s/.test(lines[i])) {
+        const sub = lines[i].trim();
+        i++;
+        if (!sub || sub.startsWith('!')) continue;
+
+        if (/^description\s+(.+)/.test(sub))
+          ifObj.description = sub.match(/^description\s+(.+)/)[1];
+        else if (sub === 'shutdown')
+          ifObj.shutdown = true;
+        else if (sub === 'no shutdown')
+          ifObj.shutdown = false;
+        else if (/^ip address\s+(\S+)\s+(\S+)/.test(sub)) {
+          const [, ip, mask] = sub.match(/^ip address\s+(\S+)\s+(\S+)/);
+          ifObj.ip = ip; ifObj.mask = mask;
+        }
+        else if (sub === 'no ip address') { ifObj.ip = null; ifObj.mask = null; }
+        else if (/^switchport mode\s+(\S+)/.test(sub))
+          ifObj.mode = sub.match(/^switchport mode\s+(\S+)/)[1].toLowerCase();
+        else if (/^switchport access vlan\s+(\d+)/.test(sub))
+          ifObj.accessVlan = parseInt(sub.match(/^switchport access vlan\s+(\d+)/)[1]);
+        else if (/^switchport trunk allowed vlan\s+(.+)/.test(sub)) {
+          const spec = sub.match(/^switchport trunk allowed vlan\s+(.+)/)[1].trim();
+          if (spec.startsWith('add '))
+            ifObj.trunkAllowed = [...(ifObj.trunkAllowed || []), ...expandVlanRange(spec.slice(4))];
+          else if (spec.startsWith('remove '))
+            ifObj.trunkAllowed = (ifObj.trunkAllowed || []).filter(v => !expandVlanRange(spec.slice(7)).includes(v));
+          else
+            ifObj.trunkAllowed = expandVlanRange(spec);
+        }
+        else if (/^switchport trunk native vlan\s+(\d+)/.test(sub))
+          ifObj.trunkNative = parseInt(sub.match(/^switchport trunk native vlan\s+(\d+)/)[1]);
+        else if (/^switchport voice vlan\s+(\d+)/.test(sub))
+          ifObj.voiceVlan = parseInt(sub.match(/^switchport voice vlan\s+(\d+)/)[1]);
+        else if (sub === 'spanning-tree portfast' || sub === 'spanning-tree portfast edge')
+          ifObj.portfast = true;
+        else if (/^spanning-tree guard\s+(\S+)/.test(sub))
+          ifObj.stpGuard = sub.match(/^spanning-tree guard\s+(\S+)/)[1];
+        else if (/^channel-group\s+(\d+)\s+mode\s+(\S+)/.test(sub)) {
+          const [, grp, mode] = sub.match(/^channel-group\s+(\d+)\s+mode\s+(\S+)/);
+          ifObj.channelGroup = parseInt(grp); ifObj.channelMode = mode;
+        }
+        else if (/^speed\s+(\S+)/.test(sub))
+          ifObj.speed = sub.match(/^speed\s+(\S+)/)[1];
+        else if (/^duplex\s+(\S+)/.test(sub))
+          ifObj.duplex = sub.match(/^duplex\s+(\S+)/)[1];
+        else if (/^ip ospf/.test(sub) || /^router ospf/.test(sub))
+          ctx.unsupported.push(`Interface OSPF config on ${rawName}: "${sub}" — configure OSPF via "configure ospf" in EXOS`);
+      }
+      continue;
+    }
+
+    // ACL: ip access-list extended/standard NAME
+    if (/^ip access-list\s+(extended|standard)\s+(\S+)/.test(line)) {
+      const [, type, name] = line.match(/^ip access-list\s+(extended|standard)\s+(\S+)/);
+      if (!ctx.acls[name]) ctx.acls[name] = { type, rules: [] };
+      while (i < lines.length && /^\s/.test(lines[i])) {
+        const sub = lines[i].trim();
+        i++;
+        if (!sub || sub.startsWith('!')) continue;
+        if (/^\d+\s+(permit|deny)/.test(sub))
+          ctx.acls[name].rules.push(sub.replace(/^\d+\s+/, ''));
+        else if (/^(permit|deny)/.test(sub))
+          ctx.acls[name].rules.push(sub);
+        else
+          ctx.acls[name].rules.push(sub);
+      }
+      continue;
+    }
+
+    // Numbered ACL
+    if (/^access-list\s+(\d+)\s+(permit|deny)\s+(.+)/.test(line)) {
+      const [, num, action, rest] = line.match(/^access-list\s+(\d+)\s+(permit|deny)\s+(.+)/);
+      const key = `acl_${num}`;
+      if (!ctx.acls[key]) ctx.acls[key] = { type: parseInt(num) <= 99 ? 'standard' : 'extended', rules: [], num };
+      ctx.acls[key].rules.push(`${action} ${rest}`);
+      continue;
+    }
+
+    // banner motd
+    if (/^banner motd/.test(line)) {
+      while (i < lines.length && !/^\^C$|^!/.test(lines[i].trim())) i++;
+      if (i < lines.length) i++;
+      continue;
+    }
+
+    // Ignore common boilerplate
+    if (/^(version|service|boot|aaa|clock|enable|username|crypto|line (con|vty|aux)|logging|cdp|lldp run|no cdp|ip ssh|ip http|no ip|ip access-group|ip classless|no service|end|Building configuration|Current configuration)/.test(line)) continue;
+
+    // router ospf / bgp / eigrp — warn
+    if (/^router\s+(ospf|bgp|eigrp|rip|isis)/.test(line)) {
+      const proto = line.match(/^router\s+(\S+)/)[1].toUpperCase();
+      ctx.unsupported.push(`${proto} routing config detected — configure routing protocols via EXOS CLI (enable ospf, configure ospf, etc.)`);
+      while (i < lines.length && /^\s/.test(lines[i])) i++;
+      continue;
+    }
+  }
+
+  return ctx;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GENERATOR
+// ─────────────────────────────────────────────────────────────────────────────
+
+function generateExos(ctx, portStyle, slot) {
+  const lines = [];
+  const warnings = [];
+  const unsupported = [...ctx.unsupported];
+
+  function section(title) {
+    lines.push('');
+    lines.push(`# ═══════════════════════════════════════`);
+    lines.push(`# ${title}`);
+    lines.push(`# ═══════════════════════════════════════`);
+  }
+
+  function cmd(c) { lines.push(c); }
+  function warn(msg) { warnings.push(msg); lines.push(`# WARNING: ${msg}`); }
+
+  // Header
+  lines.push(`# ExtremeXOS configuration`);
+  lines.push(`# Generated from Cisco IOS/IOS-XE conversion`);
+  lines.push(`# Review carefully before applying — some manual adjustments may be needed`);
+
+  // Hostname
+  if (ctx.hostname) {
+    section('System');
+    cmd(`configure snmp sysName "${ctx.hostname}"`);
+  }
+
+  // DNS / NTP
+  if (ctx.dns.domain || ctx.dns.servers.length || ctx.ntp.length) {
+    section('Management — DNS / NTP');
+    if (ctx.dns.domain) cmd(`configure dns-client default-domain "${ctx.dns.domain}"`);
+    ctx.dns.servers.forEach(s => cmd(`configure dns-client add name-server ${s} vr VR-Mgmt`));
+    ctx.ntp.forEach(s => cmd(`configure ntp server add ${s} vr VR-Mgmt`));
+    if (ctx.ntp.length) cmd(`enable ntp`);
+  }
+
+  // Management IP
+  if (ctx.mgmt.gw) {
+    section('Management Gateway');
+    cmd(`configure iproute add default ${ctx.mgmt.gw} vr VR-Mgmt`);
+  }
+
+  // VLANs — create
+  const vlanIds = Object.keys(ctx.vlans).map(Number).sort((a, b) => a - b);
+  if (vlanIds.length) {
+    section('VLAN Definitions');
+    vlanIds.forEach(id => {
+      const v = ctx.vlans[id];
+      if (id === 1) return; // default VLAN
+      cmd(`create vlan "${v.name}" tag ${id}`);
+    });
+  }
+
+  // Also ensure VLANs referenced by interfaces are created
+  const referencedVlans = new Set();
+  Object.values(ctx.interfaces).forEach(iface => {
+    if (iface.accessVlan) referencedVlans.add(iface.accessVlan);
+    if (iface.trunkAllowed) iface.trunkAllowed.forEach(v => referencedVlans.add(v));
+    if (iface.voiceVlan) referencedVlans.add(iface.voiceVlan);
+    if (iface.isSVI) {
+      const m = iface.name.match(/Vlan(\d+)/i);
+      if (m) referencedVlans.add(parseInt(m[1]));
+    }
+  });
+  const newVlans = [...referencedVlans].filter(id => id !== 1 && !ctx.vlans[id]).sort((a,b) => a-b);
+  if (newVlans.length) {
+    lines.push(`# Implicitly referenced VLANs (no name in Cisco config):`);
+    newVlans.forEach(id => {
+      cmd(`create vlan "VLAN${id}" tag ${id}`);
+      ctx.vlans[id] = { id, name: `VLAN${id}` };
+    });
+  }
+
+  // SVIs — L3 on VLANs
+  const svis = Object.values(ctx.interfaces).filter(i => i.isSVI && i.ip);
+  if (svis.length) {
+    section('VLAN L3 Interfaces (SVIs)');
+    svis.forEach(iface => {
+      const m = iface.name.match(/Vlan(\d+)/i);
+      if (!m) return;
+      const vid = parseInt(m[1]);
+      const vname = ctx.vlans[vid] ? ctx.vlans[vid].name : `VLAN${vid}`;
+      const prefix = maskToPrefix(iface.mask);
+      cmd(`configure vlan "${vname}" ipaddress ${iface.ip}/${prefix}`);
+      cmd(`enable ipforwarding vlan "${vname}"`);
+    });
+  }
+
+  // Loopback
+  const loopbacks = Object.values(ctx.interfaces).filter(i => i.isLoopback && i.ip);
+  if (loopbacks.length) {
+    section('Loopback Interfaces');
+    loopbacks.forEach(iface => {
+      const num = iface.name.match(/Loopback(\d+)/i)?.[1] || '0';
+      const prefix = maskToPrefix(iface.mask);
+      cmd(`create vlan "Loopback${num}" tag ${200 + parseInt(num)}`);
+      warn(`Loopback${num}: EXOS has no native loopback — using a dedicated VLAN as a workaround. Adjust tag as needed.`);
+      cmd(`configure vlan "Loopback${num}" ipaddress ${iface.ip}/${prefix}`);
+    });
+  }
+
+  // Port assignments — collect per VLAN
+  const portCmds = [];
+  const switchPorts = Object.values(ctx.interfaces).filter(i => !i.isSVI && !i.isLoopback && !i.isManagement);
+
+  // Build maps: vlan → access ports, vlan → tagged ports
+  const accessMap = {};  // vlanId → [port, ...]
+  const taggedMap = {};  // vlanId → [port, ...]
+
+  switchPorts.forEach(iface => {
+    const port = ifToPort(iface.name, portStyle, slot);
+    if (!port) return;
+
+    if (iface.mode === 'access' || (iface.accessVlan && !iface.mode)) {
+      const vid = iface.accessVlan || 1;
+      if (!accessMap[vid]) accessMap[vid] = [];
+      accessMap[vid].push(port);
+    } else if (iface.mode === 'trunk') {
+      const allowed = iface.trunkAllowed; // null = all
+      if (allowed) {
+        allowed.forEach(vid => {
+          if (vid === iface.trunkNative) {
+            if (!accessMap[vid]) accessMap[vid] = [];
+            accessMap[vid].push(port);
+          } else {
+            if (!taggedMap[vid]) taggedMap[vid] = [];
+            taggedMap[vid].push(port);
+          }
+        });
+      } else {
+        // trunk allowed all — add to all known VLANs as tagged
+        vlanIds.forEach(vid => {
+          if (vid === 1) return;
+          if (vid === iface.trunkNative) {
+            if (!accessMap[vid]) accessMap[vid] = [];
+            accessMap[vid].push(port);
+          } else {
+            if (!taggedMap[vid]) taggedMap[vid] = [];
+            taggedMap[vid].push(port);
+          }
+        });
+        warn(`Port ${port} (${iface.name}): trunk with no explicit allowed list — added to all known VLANs. Review carefully.`);
+      }
+    }
+  });
+
+  if (Object.keys(accessMap).length || Object.keys(taggedMap).length) {
+    section('Port → VLAN Assignments');
+  }
+
+  Object.keys(accessMap).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(vid => {
+    const ports = accessMap[vid].join(', ');
+    const vname = ctx.vlans[vid] ? ctx.vlans[vid].name : (vid == 1 ? 'Default' : `VLAN${vid}`);
+    const vref = vid == 1 ? '"Default"' : `"${vname}"`;
+    cmd(`configure vlan ${vref} add ports ${ports} untagged`);
+  });
+
+  Object.keys(taggedMap).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(vid => {
+    const ports = taggedMap[vid].join(', ');
+    const vname = ctx.vlans[vid] ? ctx.vlans[vid].name : `VLAN${vid}`;
+    cmd(`configure vlan "${vname}" add ports ${ports} tagged`);
+  });
+
+  // Voice VLANs
+  const voicePorts = switchPorts.filter(i => i.voiceVlan);
+  if (voicePorts.length) {
+    section('Voice VLANs');
+    voicePorts.forEach(iface => {
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (!port) return;
+      const vid = iface.voiceVlan;
+      const vname = ctx.vlans[vid] ? ctx.vlans[vid].name : `VLAN${vid}`;
+      cmd(`configure vlan "${vname}" add ports ${port} tagged`);
+    });
+  }
+
+  // Port descriptions
+  const described = switchPorts.filter(i => i.description);
+  if (described.length) {
+    section('Port Descriptions');
+    described.forEach(iface => {
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (!port) return;
+      cmd(`configure ports ${port} display-string "${iface.description.substring(0,20)}"`);
+      cmd(`configure ports ${port} description-string "${iface.description}"`);
+    });
+  }
+
+  // Disabled ports
+  const disabled = switchPorts.filter(i => i.shutdown && !i.isSVI);
+  if (disabled.length) {
+    section('Disabled Ports');
+    disabled.forEach(iface => {
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (!port) return;
+      cmd(`disable port ${port}`);
+    });
+  }
+
+  // LAGs / Port-channels
+  const lags = switchPorts.filter(i => i.channelGroup);
+  if (lags.length) {
+    section('Link Aggregation (LAG / Port-channel)');
+    const groups = {};
+    lags.forEach(iface => {
+      const g = iface.channelGroup;
+      if (!groups[g]) groups[g] = { members: [], mode: iface.channelMode };
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (port) groups[g].members.push(port);
+    });
+    Object.entries(groups).forEach(([grp, g]) => {
+      const lagMode = g.mode === 'active' ? 'lacp' : (g.mode === 'on' ? 'static' : 'lacp');
+      cmd(`enable sharing ${g.members[0]} grouping ${g.members.join(', ')} algorithm address-based L3_L4 ${lagMode}`);
+    });
+  }
+
+  // Spanning Tree
+  if (ctx.stpMode || switchPorts.some(i => i.portfast || i.stpGuard)) {
+    section('Spanning Tree');
+    if (ctx.stpMode === 'rapid-pvst' || ctx.stpMode === 'rapid-pvst+') {
+      cmd(`configure stpd s0 delete vlan Default ports all`);
+      cmd(`disable stpd s0`);
+      cmd(`configure stpd s0 mode dot1w`);
+      cmd(`enable stpd s0`);
+      warn(`RPVST+ is Cisco-proprietary. EXOS uses IEEE 802.1w (RSTP) or 802.1s (MSTP). Per-VLAN STP requires MSTP.`);
+    } else if (ctx.stpMode === 'pvst' || ctx.stpMode === 'pvst+') {
+      warn(`PVST+ is Cisco-proprietary. Configured EXOS with standard 802.1D STP.`);
+      cmd(`configure stpd s0 mode dot1d`);
+      cmd(`enable stpd s0`);
+    } else if (ctx.stpMode === 'mst') {
+      cmd(`configure stpd s0 mode dot1s`);
+      cmd(`enable stpd s0`);
+    }
+
+    switchPorts.filter(i => i.portfast).forEach(iface => {
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (!port) return;
+      cmd(`configure stpd s0 ports edge-safeguard enable ${port}`);
+      cmd(`configure stpd s0 ports link-type edge ${port}`);
+    });
+
+    switchPorts.filter(i => i.stpGuard === 'root').forEach(iface => {
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (!port) return;
+      cmd(`configure stpd s0 ports root-protect enable ${port}`);
+    });
+
+    switchPorts.filter(i => i.stpGuard === 'loop').forEach(iface => {
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (!port) return;
+      warn(`Loop Guard on ${port} — enable ELRP or ERPS in EXOS for loop protection`);
+      cmd(`enable elrp-client`);
+    });
+  }
+
+  // Static Routes
+  if (ctx.routes.length) {
+    section('Static Routes');
+    ctx.routes.forEach(r => {
+      const prefix = maskToPrefix(r.mask);
+      if (r.net === '0.0.0.0' && r.mask === '0.0.0.0') {
+        cmd(`configure iproute add default ${r.nh} vr VR-Default`);
+      } else {
+        const dist = r.distance ? ` ${r.distance}` : '';
+        cmd(`configure iproute add ${r.net}/${prefix} ${r.nh}${dist} vr VR-Default`);
+      }
+    });
+  }
+
+  // ACLs → EXOS Policy files
+  const aclNames = Object.keys(ctx.acls);
+  if (aclNames.length) {
+    section('ACLs → EXOS Policy Files');
+    lines.push(`# EXOS uses flat policy (.pol) files loaded via: "use policy <name>"`);
+    lines.push(`# The following policy file content must be saved to flash as <name>.pol`);
+    lines.push(`# Apply to port:  configure access-list <name> ports <port> ingress`);
+    lines.push(`# Apply to VLAN:  configure access-list <name> vlan <vlan> ingress`);
+    aclNames.forEach(name => {
+      const acl = ctx.acls[name];
+      lines.push('');
+      lines.push(`# --- Policy file: ${name}.pol ---`);
+      lines.push(`# entry ${name} {`);
+      acl.rules.forEach((rule, idx) => {
+        const converted = convertAclRule(rule);
+        if (converted.warning) warn(`ACL ${name} rule ${idx+1}: ${converted.warning}`);
+        lines.push(`#   if {`);
+        if (converted.match) lines.push(`#     ${converted.match}`);
+        lines.push(`#   } then {`);
+        lines.push(`#     ${converted.action};`);
+        lines.push(`#   }`);
+      });
+      lines.push(`# }`);
+    });
+    warn(`ACLs converted to policy file format (commented). Save each policy to flash, then apply with "configure access-list <name> ports <port> ingress".`);
+  }
+
+  lines.push('');
+  lines.push(`# ─── End of converted configuration ───`);
+  lines.push(`# Commands: ${lines.filter(l => l && !l.startsWith('#')).length}`);
+  lines.push(`# Warnings: ${warnings.length}`);
+  lines.push(`# Unsupported: ${unsupported.length}`);
+  if (unsupported.length) {
+    lines.push('');
+    lines.push(`# ═══════════════════════════════════════`);
+    lines.push(`# UNSUPPORTED / NEEDS MANUAL REVIEW`);
+    lines.push(`# ═══════════════════════════════════════`);
+    unsupported.forEach(u => lines.push(`# - ${u}`));
+  }
+
+  return { lines, warnings, unsupported };
+}
+
+function convertAclRule(rule) {
+  // Best-effort Cisco ACL rule → EXOS policy match/action
+  const result = { match: null, action: 'deny', warning: null };
+
+  const deny = /^deny\b/.test(rule);
+  result.action = deny ? 'deny' : 'permit';
+
+  // Extract IP info
+  const ipMatch = rule.match(/(permit|deny)\s+(ip|tcp|udp|icmp)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/);
+  if (ipMatch) {
+    const [, , proto, srcIp, srcWild, dstIp, dstWild] = ipMatch;
+    const srcCidr = srcIp === 'any' ? 'any' : `${srcIp}/${wildcardToCidr(srcWild)}`;
+    const dstCidr = dstIp === 'any' ? 'any' : `${dstIp}/${wildcardToCidr(dstWild)}`;
+    let matchParts = [];
+    if (srcCidr !== 'any') matchParts.push(`source-address ${srcCidr}`);
+    if (dstCidr !== 'any') matchParts.push(`destination-address ${dstCidr}`);
+    if (proto !== 'ip') matchParts.push(`protocol ${proto}`);
+    // port eq
+    const portMatch = rule.match(/eq\s+(\d+|www|ftp|ssh|telnet|smtp|dns|snmp|https)/g);
+    if (portMatch) {
+      portMatch.forEach(pm => {
+        const pnum = resolvePort(pm.replace('eq ', ''));
+        matchParts.push(`destination-port ${pnum}`);
+      });
+    }
+    result.match = matchParts.join('; ');
+  } else if (/\bany\b/.test(rule)) {
+    result.match = null;
+    result.warning = `Broad "any" match — verify EXOS policy syntax manually`;
+  } else {
+    result.warning = `Could not fully parse ACL rule: "${rule}" — manual conversion needed`;
+  }
+
+  return result;
+}
+
+function wildcardToCidr(wildcard) {
+  if (wildcard === '0.0.0.0') return '32';
+  return maskToPrefix(wildcard.split('.').map(o => (255 - parseInt(o)).toString()).join('.'));
+}
+
+function resolvePort(p) {
+  const map = { www: 80, ftp: 21, ssh: 22, telnet: 23, smtp: 25, dns: 53, snmp: 161, https: 443 };
+  return map[p] || p;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UI
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ciscoInput = document.getElementById('cisco-input');
+const outputArea = document.getElementById('output-area');
+
+ciscoInput.addEventListener('input', updateInputStats);
+
+function updateInputStats() {
+  const lines = ciscoInput.value.split('\n').filter(l => l.trim()).length;
+  document.getElementById('input-stats').innerHTML =
+    `<span class="stat"><i class="fa fa-align-left"></i> ${lines} lines</span>`;
+}
+
+function doConvert() {
+  const raw = ciscoInput.value;
+  if (!raw.trim()) {
+    outputArea.innerHTML = '<span class="out-warn"># No input — paste a Cisco config on the left.</span>';
+    return;
+  }
+
+  const portStyle = document.getElementById('portStyle').value;
+  const slot = document.getElementById('slotNum').value;
+
+  const lines = raw.split('\n');
+  const ctx = parseCisco(lines);
+  const { lines: outLines, warnings, unsupported } = generateExos(ctx, portStyle, slot);
+
+  const cmdCount = outLines.filter(l => l && !l.startsWith('#')).length;
+
+  // Render with syntax highlighting
+  const html = outLines.map(l => {
+    if (!l) return '<br>';
+    const esc = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (esc.startsWith('# WARNING:')) return `<span class="out-warn">${esc}</span>`;
+    if (esc.startsWith('#')) return `<span class="out-comment">${esc}</span>`;
+    return `<span class="out-cmd">${esc}</span>`;
+  }).join('\n');
+
+  outputArea.innerHTML = html;
+
+  document.getElementById('output-stats').innerHTML = `
+    <span class="stat"><span class="dot dot-green"></span> ${cmdCount} commands</span>
+    <span class="stat"><span class="dot dot-yellow"></span> ${warnings.length} warnings</span>
+    <span class="stat"><span class="dot dot-red"></span> ${unsupported.length} unsupported</span>
+  `;
+}
+
+function copyOutput() {
+  const text = outputArea.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('[onclick="copyOutput()"]');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
+    setTimeout(() => btn.innerHTML = orig, 1500);
+  });
+}
+
+function downloadOutput() {
+  const text = outputArea.innerText;
+  const hostname = document.getElementById('cisco-input').value.match(/hostname\s+(\S+)/i)?.[1] || 'converted';
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${hostname}-exos.xsf`;
+  a.click();
+}
+
+function clearInput() {
+  ciscoInput.value = '';
+  outputArea.innerHTML = '<span class="out-comment"># Output will appear here after conversion.</span>';
+  updateInputStats();
+}
+
+function loadSample() {
+  ciscoInput.value = `!
+hostname AccessSwitch-01
+!
+ip domain-name corp.example.com
+ip name-server 8.8.8.8 8.8.4.4
+ntp server 192.168.1.10
+!
+spanning-tree mode rapid-pvst
+!
+vlan 10
+ name Data
+vlan 20
+ name Voice
+vlan 30
+ name Management
+vlan 99
+ name Native
+!
+interface GigabitEthernet1/0/1
+ description Uplink to Core
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30
+!
+interface GigabitEthernet1/0/2
+ description User-PC-1
+ switchport mode access
+ switchport access vlan 10
+ switchport voice vlan 20
+ spanning-tree portfast
+!
+interface GigabitEthernet1/0/3
+ description User-PC-2
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+!
+interface GigabitEthernet1/0/4
+ description AP-Hallway
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+ spanning-tree portfast
+!
+interface GigabitEthernet1/0/5
+ shutdown
+!
+interface GigabitEthernet1/0/6
+ description Printer
+ switchport mode access
+ switchport access vlan 10
+!
+interface GigabitEthernet1/0/23
+ description LAG member
+ channel-group 1 mode active
+!
+interface GigabitEthernet1/0/24
+ description LAG member
+ channel-group 1 mode active
+!
+interface Vlan10
+ ip address 10.10.10.1 255.255.255.0
+!
+interface Vlan30
+ ip address 192.168.30.1 255.255.255.0
+!
+ip default-gateway 192.168.30.254
+ip route 10.20.0.0 255.255.0.0 192.168.30.254
+!
+ip access-list extended BLOCK-TELNET
+ 10 deny tcp any any eq 23
+ 20 permit ip any any
+!
+end`;
+  doConvert();
+  updateInputStats();
+}
+</script>
+</body>
+</html>
