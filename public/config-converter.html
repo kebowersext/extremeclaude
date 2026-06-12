@@ -800,8 +800,9 @@ function generateExos(ctx, portStyle, slot) {
     });
   }
 
-  // Port descriptions
-  const described = switchPorts.filter(i => i.description);
+  // Port descriptions — skip routed ports (already handled above) and SVIs
+  const routedPortNames = new Set(routedPorts.map(i => i.name));
+  const described = switchPorts.filter(i => i.description && !routedPortNames.has(i.name));
   if (described.length) {
     section('Port Descriptions');
     described.forEach(iface => {
