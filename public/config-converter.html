@@ -498,8 +498,33 @@ function parseCisco(lines) {
       continue;
     }
 
+    // line con / line vty / line aux
+    if (/^line\s+(con|vty|aux)\s+/.test(line)) {
+      const lineType = line.match(/^line\s+(con|vty|aux)/)[1];
+      while (i < lines.length && /^\s/.test(lines[i])) {
+        const sub = lines[i].trim(); i++;
+        if (!sub || sub.startsWith('!')) continue;
+        if (/^password\s+(\S+)/.test(sub)) {
+          const pw = sub.match(/^password\s+(\S+)/)[1];
+          if (!ctx.lineConfig) ctx.lineConfig = {};
+          ctx.lineConfig[lineType] = ctx.lineConfig[lineType] || {};
+          ctx.lineConfig[lineType].password = pw;
+        } else if (/^exec-timeout\s+(\d+)\s+(\d+)/.test(sub)) {
+          const [, min, sec] = sub.match(/^exec-timeout\s+(\d+)\s+(\d+)/);
+          if (!ctx.lineConfig) ctx.lineConfig = {};
+          ctx.lineConfig[lineType] = ctx.lineConfig[lineType] || {};
+          ctx.lineConfig[lineType].timeout = parseInt(min) + Math.ceil(parseInt(sec) / 60);
+        } else if (/^transport input\s+(.+)/.test(sub)) {
+          if (!ctx.lineConfig) ctx.lineConfig = {};
+          ctx.lineConfig[lineType] = ctx.lineConfig[lineType] || {};
+          ctx.lineConfig[lineType].transport = sub.match(/^transport input\s+(.+)/)[1].trim();
+        }
+      }
+      continue;
+    }
+
     // Ignore common boilerplate
-    if (/^(version|service|boot|aaa|clock|enable|username|crypto|line (con|vty|aux)|logging|cdp|lldp run|no cdp|ip ssh|ip http|no ip|ip access-group|ip classless|no service|end|Building configuration|Current configuration)/.test(line)) continue;
+    if (/^(version|service|boot|aaa|clock|enable|username|crypto|logging|cdp|lldp run|no cdp|ip ssh|ip http|no ip|ip access-group|ip classless|no service|end|Building configuration|Current configuration)/.test(line)) continue;
 
     // router ospf / bgp / eigrp — warn
     if (/^router\s+(ospf|bgp|eigrp|rip|isis)/.test(line)) {
@@ -556,6 +581,46 @@ function generateExos(ctx, portStyle, slot) {
   if (ctx.mgmt.gw) {
     section('Management Gateway');
     cmd(`configure iproute add default ${ctx.mgmt.gw} vr VR-Mgmt`);
+  }
+
+  // Line con / VTY — console & SSH/Telnet access
+  if (ctx.lineConfig) {
+    section('Console & Remote Access');
+    const con = ctx.lineConfig['con'];
+    const vty = ctx.lineConfig['vty'];
+    if (con?.password) {
+      cmd(`# Console password — set via account (EXOS uses account-based auth, not line passwords)`);
+      cmd(`configure account admin password`);
+      cmd(`# Enter password interactively: ${con.password}`);
+    }
+    if (con?.timeout !== undefined && con.timeout !== null) {
+      cmd(`configure idletimeout ${con.timeout || 0}`);
+    }
+    if (vty) {
+      const transport = vty.transport || '';
+      if (transport === 'ssh' || transport === 'ssh telnet' || transport === 'all') {
+        cmd(`enable ssh2`);
+        cmd(`configure ssh2 key`);
+      }
+      if (transport === 'telnet' || transport === 'all') {
+        cmd(`enable telnet`);
+      }
+      if (transport === 'ssh') {
+        cmd(`disable telnet`);
+      }
+      if (transport === 'none') {
+        cmd(`disable telnet`);
+        cmd(`disable ssh2`);
+      }
+      if (vty.password) {
+        cmd(`# VTY password — set via account in EXOS`);
+        cmd(`configure account admin password`);
+        cmd(`# Enter password interactively: ${vty.password}`);
+      }
+      if (vty.timeout !== undefined && vty.timeout !== null && !con?.timeout) {
+        cmd(`configure idletimeout ${vty.timeout || 0}`);
+      }
+    }
   }
 
   // VLANs — create
