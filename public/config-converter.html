@@ -604,6 +604,49 @@ function generateExos(ctx, portStyle, slot) {
     });
   }
 
+  // Routed physical ports — IP address on a non-SVI, non-loopback interface
+  // EXOS has no native routed-port; create a dedicated VLAN per port
+  const routedPorts = Object.values(ctx.interfaces).filter(i =>
+    !i.isSVI && !i.isLoopback && !i.isManagement && i.ip && i.mode !== 'access' && i.mode !== 'trunk'
+  );
+  if (routedPorts.length) {
+    section('Routed Physical Ports');
+    lines.push(`# EXOS does not have native routed ports — each is modeled as a dedicated VLAN`);
+    routedPorts.forEach(iface => {
+      const port = ifToPort(iface.name, portStyle, slot);
+      if (!port) return;
+      const prefix = maskToPrefix(iface.mask);
+      // Derive a short VLAN name from the interface name
+      const shortName = iface.name.replace(/GigabitEthernet|FastEthernet|TenGigabitEthernet|HundredGigabitEthernet|FortyGigabitEthernet/i, 'Port')
+                                   .replace(/\//g, '_');
+      const vlanName = `routed_${shortName}`;
+      // Use a high VLAN tag (3000+) based on port number to avoid conflicts
+      const portNum = parseInt(port.toString().replace(/\d+:/, '')) || 1;
+      const tag = 3000 + portNum;
+      cmd(`create vlan "${vlanName}" tag ${tag}`);
+      cmd(`configure vlan "${vlanName}" add ports ${port} untagged`);
+      cmd(`configure vlan "${vlanName}" ipaddress ${iface.ip}/${prefix}`);
+      cmd(`enable ipforwarding vlan "${vlanName}"`);
+      if (iface.description) {
+        cmd(`configure ports ${port} description-string "${iface.description}"`);
+      }
+      if (iface.shutdown) {
+        cmd(`disable port ${port}`);
+      }
+    });
+  }
+
+  // Management interface IP
+  const mgmtIfaces = Object.values(ctx.interfaces).filter(i => i.isManagement && i.ip);
+  if (mgmtIfaces.length) {
+    section('Management Interface');
+    mgmtIfaces.forEach(iface => {
+      const prefix = maskToPrefix(iface.mask);
+      cmd(`configure vlan Mgmt ipaddress ${iface.ip}/${prefix}`);
+      cmd(`enable ipforwarding vlan Mgmt`);
+    });
+  }
+
   // Loopback
   const loopbacks = Object.values(ctx.interfaces).filter(i => i.isLoopback && i.ip);
   if (loopbacks.length) {
